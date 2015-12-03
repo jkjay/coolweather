@@ -17,7 +17,10 @@ import com.coolweather.app.util.Utility;
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.app.DownloadManager.Query;
+import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.Window;
@@ -29,6 +32,9 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class ChooseAreaActivity extends Activity {
+	
+	// 是否从WeatherActivity中跳过来
+	private boolean isFromWeatherActivity;
 	
 	public static final int LEVEL_PROVINCE =0;
 	public static final int LEVEL_CITY =1;
@@ -61,6 +67,16 @@ public class ChooseAreaActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		isFromWeatherActivity = getIntent().getBooleanExtra(
+				"from_weather_activity", false);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+		if(prefs.getBoolean("city_selected", false) && !isFromWeatherActivity)
+		{
+			Intent intent = new Intent(this, WeatherActivity.class);
+			startActivity(intent);
+			finish();
+			return;
+		}
 		requestWindowFeature(Window.FEATURE_NO_TITLE);
 		setContentView(R.layout.choose_area);
 		listView =(ListView)findViewById(R.id.list_view);
@@ -76,11 +92,20 @@ public class ChooseAreaActivity extends Activity {
 				{
 					selectedProvince = provinceList.get(position);
 					queryCities();
+				}else if(currentLevel == LEVEL_CITY)
+				{
+					selectedCity =cityList.get(position);
+					queryCounties();
 				}
 				else if(currentLevel == LEVEL_COUNTY)
-				{
-					selectedCity = cityList.get(position);
-					queryCounties();
+				{	
+					String countyCode = countyList.get(position).getCountyCode();
+					Intent intent = new Intent(ChooseAreaActivity.this, WeatherActivity.class);
+					intent.putExtra("county_code", countyCode);
+					startActivity(intent);
+					finish();
+//					selectedCity = cityList.get(position);
+//					queryCounties();
 				}
 			}
 			
@@ -231,7 +256,7 @@ public class ChooseAreaActivity extends Activity {
 		if(progressDialog == null)
 		{
 			progressDialog= new ProgressDialog(this);
-			progressDialog.setMessage("正在加载...");
+			progressDialog.setMessage("正在加载...11");
 			progressDialog.setCanceledOnTouchOutside(false);
 		}
 		progressDialog.show();
@@ -260,9 +285,13 @@ public class ChooseAreaActivity extends Activity {
 		 {
 			 queryProvinces();
 		 }else{
+			 if (isFromWeatherActivity) {
+					Intent intent = new Intent(this, WeatherActivity.class);
+					startActivity(intent);
+			 }
 			 finish();
 		 }
-		
+			
 	}
 	
 
